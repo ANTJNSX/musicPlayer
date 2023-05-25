@@ -2,15 +2,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.Objects;
-import javazoom.jl.player.advanced.*;
 import javazoom.jl.player.Player;
+import javazoom.jl.player.AudioDevice;
 
 public class Main extends JFrame {
     private JList<String> fileList;
     private JButton playButton;
     private JButton stopButton;
-    private AdvancedPlayer player = null;
+    private PlayerThread playerThread = null;
 
     public Main() {
         setTitle("Music Player");
@@ -36,16 +35,19 @@ public class Main extends JFrame {
         stopButton = new JButton("Stop");
         stopButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                String selectedFile = fileList.getSelectedValue();
+                System.out.println("Stopping: " + selectedFile);
                 stopSelected();
             }
         });
 
-        playButton.setSize(100, 50);
-        stopButton.setSize(100, 50);
+        // Create a panel to hold the buttons and center it to the bottom
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.add(playButton);
+        buttonPanel.add(stopButton);
 
-
-        add(playButton, BorderLayout.SOUTH);
-        add(stopButton, BorderLayout.EAST);
+        add(buttonPanel, BorderLayout.SOUTH);
 
         pack();
         setLocationRelativeTo(null);
@@ -68,33 +70,32 @@ public class Main extends JFrame {
         fileList.setModel(model);
     }
 
-    // Inside the actionPerformed method of the ActionListener for the "Play" button
     public void playSelected() {
         String selectedFile = fileList.getSelectedValue();
+
         try {
             if (selectedFile != null) {
-
                 String filePath = "music/" + selectedFile;
                 FileInputStream fis = new FileInputStream(filePath);
-                player = new AdvancedPlayer(fis);
-                player.play();
+                Player player = new Player(fis);
 
+                if (playerThread != null) {
+                    playerThread.stopPlayback();
+                }
+
+                playerThread = new PlayerThread(player);
+                playerThread.start();
             }
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
     }
 
-    // fix the stop playing button, it after playing a song the program is stuck on only playing the song so perhaps open a thread to play the song the call "this.player.close();" to close the current player, this would also let the user play multiple songs at once.
     public void stopSelected(){
-        try {
-
-            this.player.close();
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (playerThread != null) {
+            playerThread.stopPlayback();
+            playerThread = null;
         }
     }
 
@@ -104,5 +105,32 @@ public class Main extends JFrame {
                 new Main();
             }
         });
+    }
+
+    private class PlayerThread extends Thread {
+        private Player player;
+        private boolean isPlaying;
+
+        public PlayerThread(Player player) {
+            this.player = player;
+        }
+
+        public void run() {
+            try {
+                isPlaying = true;
+                player.play();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            } finally {
+                isPlaying = false;
+                player.close();
+            }
+        }
+
+        public void stopPlayback() {
+            if (isPlaying) {
+                player.close();
+            }
+        }
     }
 }
