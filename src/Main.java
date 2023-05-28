@@ -3,24 +3,27 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import javazoom.jl.player.Player;
-import javazoom.jl.player.AudioDevice;
 
 public class Main extends JFrame {
     private JList<String> fileList;
     private JButton playButton;
     private JButton stopButton;
+    private JButton refreshButton;
     private PlayerThread playerThread = null;
 
     public Main() {
+        // Define the GUI layout
         setTitle("Music Player");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setPreferredSize(new Dimension(500, 400));
         setLayout(new BorderLayout());
 
+        // define the list
         fileList = new JList<>();
         JScrollPane scrollPane = new JScrollPane(fileList);
         add(scrollPane, BorderLayout.CENTER);
 
+        // define the play buttons function
         playButton = new JButton("Play");
         playButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -32,6 +35,7 @@ public class Main extends JFrame {
             }
         });
 
+        // define the stop buttons function
         stopButton = new JButton("Stop");
         stopButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -41,11 +45,20 @@ public class Main extends JFrame {
             }
         });
 
+        // define the refresh buttons function
+        refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                loadFiles();
+            }
+        });
+
         // Create a panel to hold the buttons and center it to the bottom
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(playButton);
         buttonPanel.add(stopButton);
+        buttonPanel.add(refreshButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
 
@@ -56,6 +69,7 @@ public class Main extends JFrame {
         loadFiles();
     }
 
+    // method to load the audio files and display them into the ui block for file list
     private void loadFiles() {
         DefaultListModel<String> model = new DefaultListModel<>();
         File folder = new File("music");
@@ -70,6 +84,7 @@ public class Main extends JFrame {
         fileList.setModel(model);
     }
 
+    // function to play the selected song, called when Play button is pressed
     public void playSelected() {
         String selectedFile = fileList.getSelectedValue();
 
@@ -107,6 +122,8 @@ public class Main extends JFrame {
         });
     }
 
+    // class for threading the player, making it able to play audio
+    // while letting user input be processed. This is because of the extended class "Thread"
     private class PlayerThread extends Thread {
         private Player player;
         private boolean isPlaying;
